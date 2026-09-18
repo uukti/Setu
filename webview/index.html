@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="{{base.css}}">
+<link rel="stylesheet" href="{{topbar/topbar.css}}">
+<link rel="stylesheet" href="{{canvas/canvas.css}}">
+<link rel="stylesheet" href="{{canvas/minimap.css}}">
+<link rel="stylesheet" href="{{code-block/code-block.css}}">
+<link rel="stylesheet" href="{{llm-config/llm-config.css}}">
+</head>
+<body>
+<div class="top">
+  <div class="brand"><span class="logo"></span><span class="titles"><strong>Setu</strong><small id="graph-status">0 modules</small></span></div>
+  <span class="opts">
+    <label class="env">Lang <select><option>Python</option></select></label>
+    <label class="env">Stack <select><option>FastAPI</option></select></label>
+    <button id="save-project" class="primary">Save Project</button>
+    <button id="restart" class="ghost" title="Kill the Python session and clear all block outputs">↻ Restart</button>
+    <button id="llm-btn" class="ghost">⚙ LLM</button>
+  </span>
+</div>
+<div id="llm-config" class="llm-config hidden">
+  <div class="row"><label>Endpoint</label><input class="endpoint" placeholder="http://localhost:4000/v1/chat/completions"></div>
+  <div class="row"><label>Model</label><input class="model" placeholder="gpt-4o"></div>
+  <div class="row"><label>API key</label><input class="key" type="password" placeholder="API key"></div>
+  <div class="row"><button class="llm-save primary">Save</button><span class="llm-status"></span></div>
+</div>
+<div class="bar"><span class="actions"><button id="add" class="primary">+ Code Block</button><button id="load" class="ghost">Load Graph</button><span class="zoom-group"><button id="zoom-out" class="ghost icon-btn" title="Zoom out">−</button><span id="zoom-label" title="Zoom (Ctrl+scroll)">100%</span><button id="zoom-in" class="ghost icon-btn" title="Zoom in">+</button><button id="zoom-reset" class="ghost icon-btn" title="Reset zoom">1:1</button></span></span><span class="hint">drag <b>●</b> to connect &nbsp;•&nbsp; drag background to pan &nbsp;•&nbsp; click label to switch type</span></div>
+<div id="canvas">
+  <svg id="edges"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z"></path></marker></defs></svg>
+  <div id="empty-hint">No modules yet - press <b>+ Code Block</b> to start.</div>
+  <canvas id="minimap" class="hidden" width="150" height="100" title="Minimap - click to jump"></canvas>
+</div>
+<script src="{{vscode.js}}"></script>
+<script src="{{llm-config/llm-config.js}}"></script>
+<script src="{{code-block/code-block.js}}"></script>
+<script src="{{canvas/canvas.js}}"></script>
+<script src="{{canvas/minimap.js}}"></script>
+</body>
+</html>

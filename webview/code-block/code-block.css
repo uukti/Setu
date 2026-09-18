@@ -1,0 +1,33 @@
+.block{position:absolute;width:288px;background:var(--vscode-editorWidget-background);border:1px solid var(--vscode-panel-border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;touch-action:none;user-select:none;box-shadow:0 4px 16px rgba(0,0,0,.28);pointer-events:auto}
+.block:hover{border-color:var(--vscode-focusBorder)}
+.block .head{display:flex;gap:6px;align-items:center}
+.block .toolbar{display:flex;gap:6px;flex-wrap:wrap}
+.block .toolbar .ai{flex:1}
+.block .grip{cursor:grab;color:var(--vscode-descriptionForeground);font-size:12px;flex:none;letter-spacing:-2px}
+.block .name{flex:1;min-width:0;font-weight:600}
+.block .status-dot{width:8px;height:8px;border-radius:50%;background:var(--vscode-descriptionForeground);opacity:.5;flex:none}
+.block .status-dot[data-state="busy"]{background:var(--vscode-progressBar-background,#e2b93d);opacity:1}
+.block .status-dot[data-state="ok"]{background:#9ece6a;opacity:1}
+.block .status-dot[data-state="fail"]{background:var(--vscode-errorForeground);opacity:1}
+.block .fld-label{font-size:10px;font-weight:650;letter-spacing:.7px;color:var(--vscode-descriptionForeground);margin-bottom:-4px}
+.block input,.block textarea{font-family:var(--vscode-editor-font-family,monospace)}
+.block textarea.code{resize:vertical;min-height:140px;white-space:pre;tab-size:4;width:100%;line-height:1.45}
+.block .code-view{background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border,var(--vscode-panel-border));border-radius:6px;padding:5px 8px;margin:0;font-family:var(--vscode-editor-font-family,monospace);font-size:12px;line-height:1.45;white-space:pre;tab-size:4;min-height:140px;max-height:320px;overflow:auto;cursor:text;user-select:text}
+.block .code-view .tok-k{color:#c586c0}
+.block .code-view .tok-s{color:#9ece6a}
+.block .code-view .tok-c{color:var(--vscode-descriptionForeground);font-style:italic}
+.block .code-view .tok-n{color:#b5cea8}
+.block .code-view .tok-d{color:#4ec9b0}
+.block .code-view .tok-c,.block .code-view .tok-s,.block .code-view .tok-k,.block .code-view .tok-n,.block .code-view .tok-d{background:none}
+.block .ai-box{display:flex;flex-direction:column;gap:6px;background:color-mix(in srgb,var(--vscode-button-background) 8%,transparent);border:1px solid var(--vscode-panel-border);border-radius:8px;padding:8px}
+.block .desc{resize:vertical;min-height:44px;width:100%;font-family:var(--vscode-font-family)}
+.block .ai-row{display:flex;gap:6px;align-items:center}
+.block .status{font-size:11px;color:var(--vscode-descriptionForeground)}
+.block .run-out{background:var(--vscode-terminal-background,var(--vscode-editor-background));color:var(--vscode-terminal-foreground,var(--vscode-foreground));border:1px solid var(--vscode-panel-border);border-left:3px solid var(--vscode-panel-border);border-radius:6px;padding:6px 8px;font-family:var(--vscode-editor-font-family,monospace);font-size:11px;line-height:1.45;white-space:pre-wrap;max-height:140px;overflow:auto;margin:0;user-select:text;cursor:text}
+.block .run-out[data-ok="ok"]{border-left-color:#9ece6a}
+.block .run-out[data-ok="fail"]{border-left-color:var(--vscode-errorForeground)}
+.block .in-port,.block .out-port{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--vscode-button-background);border:2px solid var(--vscode-editorWidget-background);outline:1px solid var(--vscode-panel-border);transform:translateY(-50%);cursor:crosshair;z-index:2}
+.block .in-port::after,.block .out-port::after{content:"";position:absolute;inset:-8px}
+.block .in-port:hover,.block .out-port:hover{transform:translateY(-50%) scale(1.25)}
+.block .in-port{left:-7px}
+.block .out-port{right:-7px}

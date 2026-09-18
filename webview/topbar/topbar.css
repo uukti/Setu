@@ -1,0 +1,8 @@
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--vscode-panel-border);background:var(--vscode-editor-background)}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.logo{width:12px;height:12px;border-radius:4px;background:var(--vscode-button-background);box-shadow:0 0 0 3px color-mix(in srgb,var(--vscode-button-background) 25%,transparent);flex:none}
+.titles{display:flex;align-items:baseline;gap:8px;min-width:0}
+.titles strong{font-size:13px;font-weight:650;letter-spacing:.1px}
+.titles small{font-size:11px;color:var(--vscode-descriptionForeground);white-space:nowrap}
+.opts{display:flex;gap:8px;align-items:center;flex:none}
+.env{display:flex;gap:6px;align-items:center;font-size:11px;color:var(--vscode-descriptionForeground)}

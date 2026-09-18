@@ -1,0 +1,2 @@
+#minimap{position:absolute;right:10px;bottom:10px;width:150px;height:100px;background:var(--vscode-editorWidget-background);border:1px solid var(--vscode-panel-border);border-radius:8px;opacity:.92;cursor:crosshair;z-index:5}
+#minimap:hover{opacity:1}

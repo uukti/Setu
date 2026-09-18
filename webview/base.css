@@ -1,0 +1,17 @@
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:var(--vscode-font-family,-apple-system,"Segoe UI",sans-serif);background:var(--vscode-sideBar-background);color:var(--vscode-foreground);display:flex;flex-direction:column;height:100vh;overflow:hidden;font-size:13px}
+.hidden{display:none!important}
+button{background:var(--vscode-button-secondaryBackground,var(--vscode-button-background));color:var(--vscode-button-secondaryForeground,var(--vscode-button-foreground));border:1px solid transparent;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;white-space:nowrap}
+button:hover{filter:brightness(1.12)}
+button:disabled{opacity:.55;cursor:default}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:1px}
+button.primary{background:var(--vscode-button-background);color:var(--vscode-button-foreground)}
+button.ghost{background:transparent;border-color:var(--vscode-panel-border);color:var(--vscode-foreground)}
+button.danger-ghost{background:transparent;color:var(--vscode-descriptionForeground)}
+button.danger-ghost:hover{color:var(--vscode-errorForeground);border-color:var(--vscode-errorForeground)}
+.icon-btn{padding:3px 8px;border-radius:6px;line-height:1.4}
+input,textarea,select{background:var(--vscode-input-background);color:var(--vscode-input-foreground);border:1px solid var(--vscode-input-border,var(--vscode-panel-border));border-radius:6px;padding:5px 8px;font-size:12px}
+input::placeholder,textarea::placeholder{color:var(--vscode-input-placeholderForeground,var(--vscode-descriptionForeground))}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--vscode-scrollbarSlider-background);border-radius:5px;border:2px solid transparent;background-clip:content-box}

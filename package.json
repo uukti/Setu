@@ -1,0 +1,39 @@
+{
+  "name": "setu",
+  "displayName": "Setu",
+  "description": "Create projects as modular code with a graph visual.",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uukti/Setu.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "main": "./extension.js",
+  "activationEvents": ["onCommand:setu.openBuilder"],
+  "contributes": {
+    "commands": [
+      {
+        "command": "setu.openBuilder",
+        "title": "Setu: Open Builder"
+      }
+    ],
+    "configuration": {
+      "title": "Setu",
+      "properties": {
+        "setu.llm.endpoint": {
+          "type": "string",
+          "default": "http://localhost:4000/v1/chat/completions",
+          "description": "OpenAI-compatible chat completions endpoint. LiteLLM proxy works as-is."
+        },
+        "setu.llm.model": {
+          "type": "string",
+          "default": "gpt-4o",
+          "description": "Model name sent to the endpoint."
+        }
+      }
+    }
+  }
+}
