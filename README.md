@@ -8,6 +8,8 @@ Create modules as graph nodes, see dependencies as edges, scaffold code from the
 
 Status: early working prototype (Python-first). See [`IDEA.md`](IDEA.md) for the product idea.
 
+![alt text](image.png)
+
 ## Features
 
 - **Graph canvas** — modules are draggable code blocks, dependencies are clickable edges (`dep` / `input` / `output`).
