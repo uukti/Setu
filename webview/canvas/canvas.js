@@ -35,6 +35,11 @@ document.getElementById('add').onclick = () => {
   window.redrawEdges();
   window.saveState();
 };
+document.getElementById('add-lib').onclick = () => {
+  world.appendChild(createLibBlock());
+  window.redrawEdges();
+  window.saveState();
+};
 
 window.edges = [];
 
@@ -149,7 +154,7 @@ canvas.addEventListener('pointerdown', (e) => {
     line.remove();
     const target = document.elementFromPoint(ev.clientX, ev.clientY);
     const toBlock = target && target.closest('.block');
-    if (toBlock && toBlock.dataset.id !== fromId) {
+    if (toBlock && toBlock.dataset.id !== fromId && toBlock.dataset.kind !== 'lib') {
       window.edges.push({ from: fromId, to: toBlock.dataset.id, type: 'dep' });
       window.redrawEdges();
       window.saveState();
@@ -185,7 +190,7 @@ window.loadGraphData = function (blocks, edges) {
 };
 window.getModules = function () {
   return [...document.querySelectorAll('#canvas .block')]
-    .map((b) => ({ id: b.dataset.id, name: b.querySelector('.name').value.trim(), code: b.querySelector('.code').value }));
+    .map((b) => ({ id: b.dataset.id, kind: b.dataset.kind || 'code', name: b.querySelector('.name').value.trim(), version: b.querySelector('.version')?.value.trim() || '', code: b.querySelector('.code')?.value || '' }));
 };
 
 document.getElementById('save-project').onclick = () => {
@@ -198,10 +203,12 @@ window.saveState = function () {
   updateChrome();
   const blocks = [...document.querySelectorAll('#canvas .block')].map((b) => ({
     id: b.dataset.id,
+    kind: b.dataset.kind || 'code',
     name: b.querySelector('.name').value,
-    desc: b.querySelector('.desc').value,
-    code: b.querySelector('.code').value,
-    open: !b.querySelector('.ai-box').classList.contains('hidden'),
+    version: b.querySelector('.version')?.value ?? '',
+    desc: b.querySelector('.desc')?.value ?? '',
+    code: b.querySelector('.code')?.value ?? '',
+    open: Boolean(b.querySelector('.ai-box') && !b.querySelector('.ai-box').classList.contains('hidden')),
     x: parseInt(b.style.left, 10) || 0,
     y: parseInt(b.style.top, 10) || 0
   }));
@@ -215,7 +222,7 @@ window.loadState = function () {
   if (typeof s.zoom === 'number' && s.zoom >= 0.4 && s.zoom <= 2) zoom = s.zoom;
   applyView();
   if (!s.blocks?.length && !s.edges?.length) return;
-  (s.blocks || []).forEach((b) => world.appendChild(createCodeBlock(b)));
+  (s.blocks || []).forEach((b) => world.appendChild(b.kind === 'lib' ? createLibBlock(b) : createCodeBlock(b)));
   window.edges = s.edges || [];
   window.redrawEdges();
   updateChrome();
@@ -235,10 +242,9 @@ window.onMessage((msg) => {
   if (msg.type === 'restarted') {
     document.querySelectorAll('#canvas .block').forEach((b) => {
       const out = b.querySelector('.run-out');
-      out.textContent = '';
-      out.classList.add('hidden');
-      out.removeAttribute('data-ok');
-      b.querySelector('.status').textContent = '';
+      if (out) { out.textContent = ''; out.classList.add('hidden'); out.removeAttribute('data-ok'); }
+      const st = b.querySelector('.status');
+      if (st) st.textContent = '';
       const dot = b.querySelector('.status-dot');
       if (dot) { delete dot.dataset.state; dot.title = 'idle'; }
     });

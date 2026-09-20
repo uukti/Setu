@@ -26,6 +26,9 @@
 .block .run-out{background:var(--vscode-terminal-background,var(--vscode-editor-background));color:var(--vscode-terminal-foreground,var(--vscode-foreground));border:1px solid var(--vscode-panel-border);border-left:3px solid var(--vscode-panel-border);border-radius:6px;padding:6px 8px;font-family:var(--vscode-editor-font-family,monospace);font-size:11px;line-height:1.45;white-space:pre-wrap;max-height:140px;overflow:auto;margin:0;user-select:text;cursor:text}
 .block .run-out[data-ok="ok"]{border-left-color:#9ece6a}
 .block .run-out[data-ok="fail"]{border-left-color:var(--vscode-errorForeground)}
+.block.lib{width:200px}
+.block.lib .version{width:100%}
+.block.lib .toolbar{justify-content:flex-end}
 .block .in-port,.block .out-port{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--vscode-button-background);border:2px solid var(--vscode-editorWidget-background);outline:1px solid var(--vscode-panel-border);transform:translateY(-50%);cursor:crosshair;z-index:2}
 .block .in-port::after,.block .out-port::after{content:"";position:absolute;inset:-8px}
 .block .in-port:hover,.block .out-port:hover{transform:translateY(-50%) scale(1.25)}

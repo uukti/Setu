@@ -16,6 +16,67 @@ function highlightPy(src) {
     });
 }
 
+function wireDrag(d) {
+  d.onpointerdown = (e) => {
+    if (e.target.closest('input,textarea,button,.in-port,.out-port,.run-out,.code-view')) return;
+    d.setPointerCapture(e.pointerId);
+    const p0 = window.canvasPoint(e.clientX, e.clientY);
+    const dx = p0.x - d.offsetLeft, dy = p0.y - d.offsetTop;
+    const move = (ev) => { const p = window.canvasPoint(ev.clientX, ev.clientY); d.style.left = (p.x - dx) + 'px'; d.style.top = (p.y - dy) + 'px'; window.redrawEdges?.(); };
+    const up = () => { d.removeEventListener('pointermove', move); d.removeEventListener('pointerup', up); window.saveState?.(); };
+    d.addEventListener('pointermove', move); d.addEventListener('pointerup', up);
+  };
+}
+
+function createLibBlock(data = {}) {
+  const id = data.id ?? 'b' + codeBlockCount++;
+  const n = parseInt(String(id).slice(1), 10);
+  if (!Number.isNaN(n) && n >= codeBlockCount) codeBlockCount = n + 1;
+  const d = document.createElement('div');
+  d.className = 'block lib';
+  d.dataset.id = id;
+  d.dataset.kind = 'lib';
+  d.style.left = (data.x ?? 16 + (codeBlockCount * 24) % 160) + 'px';
+  d.style.top = (data.y ?? 16 + (codeBlockCount * 24) % 160) + 'px';
+
+  d.innerHTML = `
+    <div class="out-port" title="Output - drag to connect"></div>
+    <div class="head">
+      <span class="grip" title="Drag to move">⠿</span>
+      <input class="name" placeholder="lib_name" spellcheck="false">
+      <span class="status-dot" title="lib"></span>
+    </div>
+    <span class="fld-label">VERSION</span>
+    <input class="version" placeholder="1.26.0" spellcheck="false">
+    <div class="toolbar">
+      <button class="del icon-btn danger-ghost" title="Delete lib block">&times;</button>
+    </div>
+  `;
+
+  const name = d.querySelector('.name');
+  const version = d.querySelector('.version');
+  name.value = data.name ?? '';
+  version.value = data.version ?? '';
+  d.querySelector('.del').onclick = () => { blocks.delete(id); window.removeNodeEdges(id); d.remove(); window.saveState?.(); };
+  [name, version].forEach((el) => el.addEventListener('input', () => window.saveState?.()));
+
+  wireDrag(d);
+  blocks.set(id, d);
+  return d;
+}
+
+// import lines for incoming lib edges, so ▶ runs with the same context Save writes
+window.libSetup = function (id) {
+  const code = blocks.get(id)?.querySelector('.code')?.value || '';
+  const libs = [...new Set((window.edges || []).filter((e) => e.to === id && e.from !== id)
+    .map((e) => window.getBlockEl(e.from))
+    .filter((b) => b && b.dataset.kind === 'lib')
+    .map((b) => b.querySelector('.name').value.trim())
+    // ponytail: skip libs the block already imports (no duplicate `import x` at run)
+    .filter((n) => n && !new RegExp(`^\\s*(import\\s+${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b|from\\s+${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b)`, 'm').test(code)))];
+  return libs.map((n) => `import ${n}`).join('\n');
+};
+
 function createCodeBlock(data = {}) {
   const id = data.id ?? 'b' + codeBlockCount++;
   const n = parseInt(String(id).slice(1), 10);
@@ -23,6 +84,7 @@ function createCodeBlock(data = {}) {
   const d = document.createElement('div');
   d.className = 'block';
   d.dataset.id = id;
+  d.dataset.kind = 'code';
   d.style.left = (data.x ?? 16 + (codeBlockCount * 24) % 160) + 'px';
   d.style.top = (data.y ?? 16 + (codeBlockCount * 24) % 160) + 'px';
 
@@ -74,7 +136,7 @@ function createCodeBlock(data = {}) {
     gen.disabled = true;
     const deps = (window.edges || []).filter((e) => e.to === id && e.from !== id)
       .map((e) => blocks.get(e.from)).filter(Boolean)
-      .map((b) => ({ name: b.querySelector('.name').value.trim(), code: b.querySelector('.code').value }));
+      .map((b) => ({ name: b.querySelector('.name').value.trim(), kind: b.dataset.kind || 'code', version: b.querySelector('.version')?.value.trim() || '', code: b.querySelector('.code')?.value || '' }));
     window.vscode.postMessage({ type: 'generate', id, description: desc.value.trim(), context: deps });
   };
   [name, desc, code].forEach((el) => el.addEventListener('input', () => window.saveState?.()));
@@ -97,18 +159,11 @@ function createCodeBlock(data = {}) {
     status.textContent = 'running...';
     setDot('busy');
     runOut.classList.add('hidden');
-    window.vscode.postMessage({ type: 'runBlock', id, code: code.value });
+    const setup = window.libSetup(id);
+    window.vscode.postMessage({ type: 'runBlock', id, code: setup ? setup + '\n' + code.value : code.value });
   };
 
-  d.onpointerdown = (e) => {
-    if (e.target.closest('input,textarea,button,.in-port,.out-port,.run-out,.code-view')) return;
-    d.setPointerCapture(e.pointerId);
-    const p0 = window.canvasPoint(e.clientX, e.clientY);
-    const dx = p0.x - d.offsetLeft, dy = p0.y - d.offsetTop;
-    const move = (ev) => { const p = window.canvasPoint(ev.clientX, ev.clientY); d.style.left = (p.x - dx) + 'px'; d.style.top = (p.y - dy) + 'px'; window.redrawEdges?.(); };
-    const up = () => { d.removeEventListener('pointermove', move); d.removeEventListener('pointerup', up); window.saveState?.(); };
-    d.addEventListener('pointermove', move); d.addEventListener('pointerup', up);
-  };
+  wireDrag(d);
 
   blocks.set(id, d);
   return d;

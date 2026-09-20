@@ -79,17 +79,24 @@ async function handleMessage(msg, webview, context) {
 }
 
 async function generate(endpoint, model, apiKey, description, context = []) {
-  const deps = context.filter((d) => d && d.name).map((d) => {
+  const libs = context.filter((d) => d && d.kind === 'lib' && d.name);
+  const depCode = context.filter((d) => d && d.kind !== 'lib' && d.name).map((d) => {
     const names = [...definedNames(d.code || '')];
     return names.length ? `# from ${d.name} import ${names.join(', ')}\n${d.code}` : `# dependency ${d.name} (imported for side effects)\n${d.code}`;
   }).join('\n\n');
+  const libCtx = libs.map((l) => `# library ${l.name}${l.version ? `>=${l.version}` : ''} (already imported - do NOT import it, just use it)`).join('\n');
+  const deps = [depCode, libCtx].filter(Boolean).join('\n\n');
+  const system = 'Return a single Python code block only. No explanations, no markdown fences. Reuse the variables and functions from the dependency code; do not redefine them.'
+    + (libs.length ? ` Do NOT write any import/from-import lines for ${libs.map((l) => l.name).join(', ')} - already imported, reference each by its plain name (e.g. \`${libs[0].name}.foo\`).` : '');
+  // ponytail: no timeout = stuck on "generating..." forever when the endpoint hangs; surface it as an error instead
   const res = await fetch(endpoint, {
     method: 'POST',
+    signal: AbortSignal.timeout(120000),
     headers: { 'Content-Type': 'application/json', ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}) },
     body: JSON.stringify({
       model,
       messages: [
-        { role: 'system', content: 'Return a single Python code block only. No explanations, no markdown fences. Reuse the variables and functions from the dependency code; do not redefine them.' },
+        { role: 'system', content: system },
         { role: 'user', content: (deps ? deps + '\n\n# task\n' : '') + description }
       ],
       stream: false
@@ -99,7 +106,11 @@ async function generate(endpoint, model, apiKey, description, context = []) {
   const data = await res.json();
   const code = data.choices?.[0]?.message?.content;
   if (!code) throw new Error('Empty LLM response');
-  return code.replace(/^```[a-z]*\n?|\n?```$/g, '').trim();
+  let out = code.replace(/^```[a-z]*\n?|\n?```$/g, '').trim();
+  // ponytail: model still emits imports despite prompt; strip lib imports (edge already shows them, run/save re-add them)
+  const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  for (const l of libs) out = out.replace(new RegExp(`^\\s*(import\\s+${esc(l.name)}\\b.*|from\\s+${esc(l.name)}\\b.*)\\n?`, 'gm'), '').trim();
+  return out;
 }
 
 async function saveProject(modules, edges) {
@@ -107,8 +118,12 @@ async function saveProject(modules, edges) {
   if (!folders?.length) throw new Error('Open a workspace folder first');
   const root = folders[0].uri;
   const nameById = new Map(modules.map((m) => [m.id, m.name]));
-  const codeByName = new Map(modules.map((m) => [m.name, m.code]));
+  const codeByName = new Map(modules.map((m) => [m.name, m.code || '']));
+  const libs = modules.filter((m) => m.kind === 'lib' && m.name);
+  let n = 0;
   for (const m of modules) {
+    if (m.kind === 'lib') continue;
+    n++;
     const imports = [...new Set(edges
       .filter((e) => e.to === m.id && e.from !== m.id)
       .map((e) => nameById.get(e.from))
@@ -121,7 +136,21 @@ async function saveProject(modules, edges) {
     const body = lines.length ? lines.join('\n') + '\n\n' + m.code : m.code;
     await vscode.workspace.fs.writeFile(vscode.Uri.joinPath(root, m.name + '.py'), Buffer.from(body, 'utf8'));
   }
-  vscode.window.showInformationMessage(`Saved ${modules.length} modules`);
+  // ponytail: plain requirements.txt so non-uv setups get deps too; uv add keeps pyproject in sync where available
+  if (libs.length) await vscode.workspace.fs.writeFile(vscode.Uri.joinPath(root, 'requirements.txt'), Buffer.from(libs.map((l) => l.version ? `${l.name}>=${l.version}` : l.name).join('\n') + '\n', 'utf8'));
+  else try { await vscode.workspace.fs.delete(vscode.Uri.joinPath(root, 'requirements.txt')); } catch (_) {}
+  for (const l of libs) await uvAdd(root.fsPath, l.name, l.version);
+  vscode.window.showInformationMessage(`Saved ${n} modules${libs.length ? ` + ${libs.length} libs` : ''}`);
+}
+
+// ponytail: shells out to `uv add` instead of hand-editing pyproject.toml (no TOML lib); if uv-managed file formats harden, keep this
+async function uvAdd(cwd, name, version) {
+  const spec = version ? `${name}>=${version}` : name;
+  try {
+    await execFileP('uv', ['add', spec], { cwd });
+  } catch (err) {
+    throw new Error(`uv add ${spec} failed (is uv on PATH?): ${err.message}`);
+  }
 }
 
 function chainOrder(modules, edges, targetId) {
@@ -275,6 +304,9 @@ async function loadGraph() {
       if (from && from !== b.id) edges.push({ from, to: b.id, type: 'dep' });
     }
   });
+  // ponytail: edge already shows internal imports in UI, run/save re-add them; strip only those, keep external (numpy/os/...) in code
+  const internal = new Set(idByName.keys());
+  blocks.forEach((b) => { b.code = stripEdgeImports(b.code, b.name, internal); });
   return { blocks, edges };
 }
 
@@ -284,6 +316,33 @@ async function collectPy(dir, out) {
     if (type === vscode.FileType.Directory) { if (!name.startsWith('.') && name !== 'node_modules') await collectPy(u, out); }
     else if (name.endsWith('.py')) out.push(u);
   }
+}
+
+// ponytail: drops only bare internal imports that became edges; aliased/mixed-external lines stay so code keeps running
+function stripEdgeImports(code, selfName, internal) {
+  const out = [];
+  for (const line of String(code || '').split('\n')) {
+    const fm = line.match(/^\s*from\s+([\w.]+)\s+import\s+\S/);
+    if (fm) {
+      const base = fm[1].split('.').pop();
+      if (base && base !== selfName && internal.has(base) && !/\bas\b/.test(line)) continue;
+      out.push(line); continue;
+    }
+    const im = line.match(/^(\s*)import\s+(.+)/);
+    if (im) {
+      const parts = im[2].split(',').map((s) => s.trim()).filter(Boolean);
+      if (parts.some((p) => /\bas\b/.test(p))) { out.push(line); continue; }
+      const keep = parts.filter((p) => {
+        const base = p.split('.')[0].trim();
+        return !(base && base !== selfName && internal.has(base));
+      });
+      if (!keep.length) continue;
+      out.push(keep.length !== parts.length ? `${im[1]}import ${keep.join(', ')}` : line);
+      continue;
+    }
+    out.push(line);
+  }
+  return out.join('\n').replace(/^\n+/, '');
 }
 
 function importedModules(code) {
